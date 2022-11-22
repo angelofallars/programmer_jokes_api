@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 
@@ -21,6 +22,19 @@ func main() {
 		Password: "",
 		DB:       0,
 	})
+
+	jokesCount, err := redisClient.SCard(redisCtx, "rs2JokeIdIndex").Result()
+	if err != nil {
+		log.Fatalf("Error getting the count of jokes in Redis: %s", err)
+	}
+
+	if jokesCount == 0 {
+		err := populateDbWithJokes(redisClient)
+		if err != nil {
+			log.Fatalf("Error populating database with jokes: %s", err)
+		}
+		fmt.Println("Populated database with jokes.")
+	}
 
 	router.GET("/", func(ctx *gin.Context) {
 		id, err := redisClient.SRandMember(redisCtx, "rs2JokeIdIndex").Result()
@@ -154,6 +168,40 @@ func writeJoke(client *redis.Client, joke string) (string, error) {
 	}
 
 	return id, nil
+}
+
+func populateDbWithJokes(client *redis.Client) error {
+	jokes := []string{
+		"Today I made my first money as a programmer. I sold my laptop.",
+		"A programmer was arrested for writing unreadable code. He refused to comment.",
+		"Why do Java programmers have to wear glasses? Because they don't C#.",
+		"When your hammer is C++, everything begins to look like a thumb.",
+		"To understand what recursion is, you must first understand recursion.",
+		"There are 2 hard problems in computer science: caching, naming, and off-by-1 errors.",
+		"How does a programmer confuse a mathematician? x = x + 1",
+		"Why does a programmer prefer dark mode? Because light attracts bugs.",
+		"My programmer friend said I have a high IQ. He said it's 404",
+		"JavaScript. That's the entire joke.",
+		"I would make a UDP joke, but you might not get it.",
+		"Why did the Python data scientist get arrested at customs? She was caught trying to import pandas!",
+		"What's the cutest Linux distribution? UwUbuntu.",
+		"When I wrote this code, only me and God knew how it works. Now only God knows...",
+		"Give a man a program, frustrate him for a day. Teach a man to program, frustrate him for a lifetime.",
+		"Debugging is like being the detective in a crime movie where you’re also the murderer.",
+		"!false (It’s funny because it’s true.)",
+		"Why do programmers always mix up Christmas and Halloween? Because Dec 25 is Oct 31.",
+		"#muscles { display: flex; }",
+	}
+
+	for _, joke := range jokes {
+		_, err := writeJoke(client, joke)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 const ID_LEN uint = 8
