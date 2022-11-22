@@ -1,0 +1,113 @@
+openapi: 3.1.0
+info:
+  title: Programming Jokes
+  description: An API that provides programming-related jokes.
+  version: 0.0.1
+paths:
+  /:
+    get:
+      summary: Get a random programming joke
+      description: Retrieves a random programming joke along with its ID
+      responses:
+          "200":
+            description: "OK"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    joke:
+                      type: string
+                    id:
+                      type: string
+
+  /jokes/{joke_id}:
+    get:
+      summary: Get a programming joke by ID
+      description: Fetch a programming joke by ID
+      responses:
+        "200":
+            description: "OK"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    joke:
+                      type: string
+        "400":
+            description: There is no joke with the passed in ID
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/errorMessage"
+                example: [ "error": "There is no joke associated with that ID" ]
+
+  /jokes:
+    post:
+      summary: Submit a new programming joke
+      description: Store a new programming joke in the database (max 256 characters) and return its ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                joke:
+                  type: string
+                  maxLength: 256
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+        "400":
+          description: The provided joke string is too long
+          content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/errorMessage"
+
+    delete:
+      summary: Delete a programming joke
+      description: Delete a programming joke in the database by ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+        "400":
+          description: There is no joke associated with that ID
+          content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/errorMessage"
+                example: [ "error": "There is no joke associated with that ID" ]
+
+components:
+  schemas:
+    errorMessage:
+      type: object
+      properties:
+          error:
+            type: string
+            maxLength: 256
+      description: A JSON object describing an error
