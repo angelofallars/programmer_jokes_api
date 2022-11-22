@@ -76,28 +76,14 @@ func main() {
 			return
 		}
 
-		isJokeTooLong := len(jsonBody.Joke) > 256
-		if isJokeTooLong {
-			makeErrorResponse(ctx, http.StatusInternalServerError, errors.New("Joke is too long, should be 256 characters or less"))
-			return
-		}
-
-		id, err := generateId(redisClient)
+		id, err := writeJoke(redisClient, jsonBody.Joke)
 		if err != nil {
-			makeErrorResponse(ctx, http.StatusInternalServerError, err)
-			return
-		}
+			var inputValidationError *InputValidationError
+			if errors.As(err, &inputValidationError) {
+				makeErrorResponse(ctx, http.StatusBadRequest, err)
+			}
 
-		err = redisClient.SAdd(redisCtx, "rs2JokeIdIndex", id).Err()
-		if err != nil {
 			makeErrorResponse(ctx, http.StatusInternalServerError, err)
-			return
-		}
-
-		err = redisClient.Set(redisCtx, fmt.Sprintf("rs1Jokes:%s", id), jsonBody.Joke, 0).Err()
-		if err != nil {
-			makeErrorResponse(ctx, http.StatusInternalServerError, err)
-			return
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{
@@ -142,6 +128,30 @@ func main() {
 	})
 
 	router.Run()
+}
+
+func writeJoke(client *redis.Client, joke string) (string, error) {
+	isJokeTooLong := len(joke) > 256
+	if isJokeTooLong {
+		return "", &InputValidationError{"Joke is too long, should be 256 characters or less"}
+	}
+
+	id, err := generateId(client)
+	if err != nil {
+		return "", err
+	}
+
+	err = client.SAdd(redisCtx, "rs2JokeIdIndex", id).Err()
+	if err != nil {
+		return "", err
+	}
+
+	err = client.Set(redisCtx, fmt.Sprintf("rs1Jokes:%s", id), joke, 0).Err()
+	if err != nil {
+		return "", err
+	}
+
+	return id, nil
 }
 
 const ID_LEN uint = 8
