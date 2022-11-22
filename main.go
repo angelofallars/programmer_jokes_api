@@ -227,5 +227,5 @@ func generateId(client *redis.Client) (string, error) {
 }
 
 func makeErrorResponse(ctx *gin.Context, code int, err error) {
-	ctx.JSON(code, ResponseError{fmt.Sprintf("Error: %s", err)})
+	ctx.JSON(code, ResponseError{Error: err.Error()})
 }
