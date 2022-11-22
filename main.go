@@ -81,9 +81,11 @@ func main() {
 			var inputValidationError *InputValidationError
 			if errors.As(err, &inputValidationError) {
 				makeErrorResponse(ctx, http.StatusBadRequest, err)
+				return
 			}
 
 			makeErrorResponse(ctx, http.StatusInternalServerError, err)
+			return
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{
